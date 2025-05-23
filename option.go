@@ -21,6 +21,13 @@ func None[T any]() Option[T] {
 	return Option[T]{val: nil, exists: false}
 }
 
+func FromErr[T any](val T, err error) Option[T] {
+	if err != nil {
+		return None[T]()
+	}
+	return Some(val)
+}
+
 func (o Option[T]) value() T { return *o.val }
 
 func (o Option[T]) String() string {

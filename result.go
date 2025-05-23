@@ -25,6 +25,13 @@ func Err[T any](err error) Result[T] {
 	return Result[T]{val: nil, err: err}
 }
 
+func (r Result[T]) From(val T ,err error) Result[T] {
+	if err != nil {
+		return Err[T](err)
+	}
+	return Ok(val)
+}
+
 func (r Result[T]) value() T { return *r.val }
 
 func (r Result[T]) String() string {
