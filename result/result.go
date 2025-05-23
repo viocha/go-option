@@ -1,9 +1,11 @@
-package option
+package result
 
 import (
 	"errors"
 	"fmt"
 	"reflect"
+	
+	opt "github.com/viocha/go-option/option"
 )
 
 // Result[T] 是一个用于包装值和错误的类型。它要么是 Ok(T)（成功并包含一个值），要么是 Err(error)（错误并包含一个错误值）
@@ -11,6 +13,8 @@ type Result[T any] struct {
 	val *T
 	err error
 }
+// ========================== 构造函数 =============================
+
 
 // 构造一个 Result[T] 的 Ok 变体
 func Ok[T any](value T) Result[T] {
@@ -25,18 +29,28 @@ func Err[T any](err error) Result[T] {
 	return Result[T]{val: nil, err: err}
 }
 
-func (r Result[T]) From(val T ,err error) Result[T] {
+// 将 T 和 error 转换为 Result[T]
+func FromVal[T any](val T, err error) Result[T] {
 	if err != nil {
 		return Err[T](err)
 	}
 	return Ok(val)
 }
 
-func (r Result[T]) value() T { return *r.val }
+// 将 Option[T] 和 error 转换为 Result[T]
+func FromOpt[T any](o opt.Option[T], err error) Result[T] {
+	if o.IsSome() {
+		return Ok[T](o.Get())
+	}
+	return Err[T](err)
+}
+
+// ========================== 方法 =============================
+
 
 func (r Result[T]) String() string {
 	if r.IsOk() {
-		return fmt.Sprintf("Ok[%T](%v)", r.value(), r.value())
+		return fmt.Sprintf("Ok[%T](%v)", r.Get(), r.Get())
 	}
 	typ := reflect.TypeFor[T]()
 	return fmt.Sprintf("Err[%v](%v)", typ, r.err)
@@ -54,12 +68,12 @@ func (r Result[T]) IsErr() bool {
 
 // 当 Result 是 Ok 且内部值等于v时返回 true
 func (r Result[T]) Has(v T) bool {
-	return r.IsOk() && reflect.DeepEqual(r.value(), v)
+	return r.IsOk() && reflect.DeepEqual(r.Get(), v)
 }
 
 // 当 Result 是 Ok 且内部值满足f时返回 true
 func (r Result[T]) HasFunc(f func(T) bool) bool {
-	return r.IsOk() && f(r.value())
+	return r.IsOk() && f(r.Get())
 }
 
 // 当 Result 是 Err 且内部错误等于e时返回 true
@@ -75,7 +89,7 @@ func (r Result[T]) HasErrFunc(f func(error) bool) bool {
 // Do 如果 Result 是 Ok，则对其包含的值调用 f。
 func (r Result[T]) Do(f func(T)) Result[T] {
 	if r.IsOk() {
-		f(r.value())
+		f(r.Get())
 	}
 	return r
 }
@@ -119,7 +133,7 @@ func (r Result[T]) Get() T {
 	if !r.IsOk() {
 		panic(fmt.Sprintf("called Result.Unwrap() on an Err value: %v", r.err))
 	}
-	return r.value()
+	return *r.val
 }
 
 // 如果 Result 是 Ok，则返回其包含的值。否则返回默认值 v
@@ -131,7 +145,7 @@ func (r Result[T]) GetOrZero() T { return r.Val().GetOrZero() }
 // 如果 Result 是 Ok，则返回其包含的值。否则调用f并返回其结果
 func (r Result[T]) GetOrFunc(f func(error) T) T {
 	if r.IsOk() {
-		return r.value()
+		return r.Get()
 	}
 	return f(r.err)
 }
@@ -145,35 +159,35 @@ func (r Result[T]) GetErr() error {
 }
 
 // 同时返回值和错误
-func (r Result[T]) GetWithErr() (T, error) {
+func (r Result[T]) GetValErr() (T, error) {
 	if r.IsOk() {
-		return r.value(), nil
+		return r.Get(), nil
 	}
 	return *new(T), r.err
 }
 
-// ========================== 和 Option 转换 ============================
+// ========================== 和 opt.Option 转换 ============================
 
-// 将 Result[T] 的值转换为 Option[T]
-func (r Result[T]) Val() Option[T] {
+// 将 Result[T] 的值转换为 opt.Option[T]
+func (r Result[T]) Val() opt.Option[T] {
 	if r.IsOk() {
-		return Some(r.value())
+		return opt.Some(r.Get())
 	}
-	return None[T]()
+	return opt.None[T]()
 }
 
-// 将 Result[T] 的错误转换为 Option[error]
-func (r Result[T]) Err() Option[error] {
+// 将 Result[T] 的错误转换为 opt.Option[error]
+func (r Result[T]) Err() opt.Option[error] {
 	if !r.IsOk() {
-		return Some(r.err)
+		return opt.Some(r.err)
 	}
-	return None[error]()
+	return opt.None[error]()
 }
 
 // ========================== 逻辑与 ============================
 
 // 如果 Result 是 Ok，则返回 b，否则返回原来的Err
-func RAnd[T any, U any](a Result[T], b Result[U]) Result[U] {
+func And[T any, U any](a Result[T], b Result[U]) Result[U] {
 	if a.IsOk() {
 		return b
 	}
@@ -181,34 +195,34 @@ func RAnd[T any, U any](a Result[T], b Result[U]) Result[U] {
 }
 
 // 如果 Result 是 Ok，则调用f得到一个新的Result并返回，否则返回原来的Err
-func RAndFunc[T any, U any](r Result[T], f func(T) Result[U]) Result[U] {
+func AndFunc[T any, U any](r Result[T], f func(T) Result[U]) Result[U] {
 	if r.IsOk() {
-		return f(r.value())
+		return f(r.Get())
 	}
 	return Err[U](r.err)
 }
 
 // ==========================  Map操作 ============================
 // 如果 Result 是 Ok，则使用f转换其值构造一个新的 Result 并返回，否则返回原来的Err
-func RMap[T any, U any](r Result[T], f func(T) U) Result[U] {
+func Map[T any, U any](r Result[T], f func(T) U) Result[U] {
 	if r.IsOk() {
-		return Ok(f(r.value()))
+		return Ok(f(r.Get()))
 	}
 	return Err[U](r.err)
 }
 
 // 如果 Result 是 Ok，则使用f转换其值并返回，否则返回默认值 v
-func RMapOr[T any, U any](r Result[T], f func(T) U, v U) U {
+func MapOr[T any, U any](r Result[T], f func(T) U, v U) U {
 	if r.IsOk() {
-		return f(r.value())
+		return f(r.Get())
 	}
 	return v
 }
 
 // 如果 Result 是 Ok，则使用okFn并返回其结果，否则调用errFn并返回其结果
-func RMapOrFunc[T any, U any](r Result[T], okFn func(T) U, errFn func(error) U) U {
+func MapOrFunc[T any, U any](r Result[T], okFn func(T) U, errFn func(error) U) U {
 	if r.IsOk() {
-		return okFn(r.value())
+		return okFn(r.Get())
 	}
 	return errFn(r.err)
 }

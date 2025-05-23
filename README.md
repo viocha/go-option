@@ -19,19 +19,38 @@ package main
 
 import (
 	"fmt"
+	"errors" // 示例中可能需要
+
+	"github.com/viocha/go-option/option"
+	"github.com/viocha/go-option/result"
 )
 
-val := option.Some(42)
-if val.IsSome() {
-  fmt.Println(val.Get()) // 42
+func main() {
+	// Option 示例
+	val := option.Some(42)
+	if val.IsSome() {
+		fmt.Println("Option value:", val.Get()) // Option value: 42
+	}
+
+	noneVal := option.None[int]()
+	fmt.Println("Option value or default:", noneVal.GetOr(0)) // Option value or default: 0
+
+	// Result 示例
+	resSuccess := result.Ok("success")
+	resSuccess.Do(func(s string) {
+		fmt.Println("OK:", s) // OK: success
+	}).ElseDo(func(err error) {
+		fmt.Println("Error:", err)
+	})
+
+	resFailure := result.Err[string](errors.New("something went wrong"))
+	if resFailure.IsErr() {
+		fmt.Println("Error found:", resFailure.GetErr()) // Error found: something went wrong
+	}
+	
+	fmt.Println("Result value or default:", resFailure.GetOr("default value")) // Result value or default: default value
 }
 
-res := option.Ok("success")
-res.Do(func (s string) {
-	fmt.Println("OK:", s)
-}).ElseDo(func (err error) {
-	fmt.Println("Error:", err)
-})
 ```
 
 ---
@@ -49,17 +68,19 @@ res.Do(func (s string) {
 
 * `Some[T](value T) Option[T]`
 * `None[T]() Option[T]`
+* `FromVal[T](val T, err error) Option[T]`
 
 #### 方法列表
 
 | 方法                           | 返回类型         | 描述                |
 |------------------------------|--------------|-------------------|
+| `String()`                   | `string`     | 返回 Option 的字符串表示  |
 | `IsSome()`                   | `bool`       | 是否包含值             |
 | `IsNone()`                   | `bool`       | 是否为空              |
 | `Has(value T)`               | `bool`       | 值是否等于指定值          |
 | `HasFunc(f func(T) bool)`    | `bool`       | 值是否满足函数条件         |
 | `Do(f func(T))`              | `Option[T]`  | 如果有值则执行函数         |
-| `ElseDo(f func())`           | `void`       | 如果无值则执行函数         |
+| `ElseDo(f func())`           |              | 如果无值则执行函数         |
 | `Filter(f func(T) bool)`     | `Option[T]`  | 满足条件则保留，否则返回 None |
 | `Or(b Option[T])`            | `Option[T]`  | 若无值则返回备选          |
 | `OrFunc(f func() Option[T])` | `Option[T]`  | 若无值则调用函数并返回其结果    |
@@ -69,8 +90,7 @@ res.Do(func (s string) {
 | `GetOrFunc(f func() T)`      | `T`          | 获取值或调用函数返回默认值     |
 | `GetOrZero()`                | `T`          | 获取值或返回零值          |
 | `ToErr(err error)`           | `error`      | 无值返回错误            |
-| `GetWithErr(err error)`      | `(T, error)` | 同时返回值和错误          |
-| `ToResult(err error)`        | `Result[T]`  | 转为 `Result` 类型    |
+| `GetValErr(err error)`       | `(T, error)` | 同时返回值和错误          |
 
 #### 函数列表
 
@@ -95,44 +115,46 @@ res.Do(func (s string) {
 
 * `Ok[T](value T) Result[T]`
 * `Err[T](error error) Result[T]`
+* `FromVal[T](val T, err error) Result[T]`
+* `FromOpt[T](o option.Option[T], err error) Result[T]`
 
 #### 方法列表
 
-| 方法                              | 返回类型            | 描述              |
-|---------------------------------|-----------------|-----------------|
-| `IsOk()`                        | `bool`          | 是否成功            |
-| `IsErr()`                       | `bool`          | 是否失败            |
-| `Has(value T)`                  | `bool`          | 是否为 Ok 且值相等     |
-| `HasFunc(func(T) bool)`         | `bool`          | 是否为 Ok 且值满足条件   |
-| `HasErr(error)`                 | `bool`          | 是否为 Err 且错误相等   |
-| `HasErrFunc(func(error) bool)`  | `bool`          | 是否为 Err 且错误满足函数 |
-| `Do(func(T))`                   | `Result[T]`     | 若为 Ok 执行函数      |
-| `ElseDo(func(error))`           | `Result[T]`     | 若为 Err 执行函数     |
-| `Or(Result[T])`                 | `Result[T]`     | 若为 Err 返回备选     |
-| `OrFunc(func(error) Result[T])` | `Result[T]`     | 若为 Err 执行函数并返回  |
-| `MapErr(func(error) error)`     | `Result[T]`     | 映射错误            |
-| `Get()`                         | `T`             | 获取值或 panic      |
-| `GetOr(v T)`                    | `T`             | 获取值或返回默认        |
-| `GetOrZero()`                   | `T`             | 获取值或返回零值        |
-| `GetOrFunc(f func(error) T)`    | `T`             | 获取值或调用函数        |
-| `GetErr()`                      | `error`         | 获取错误或 panic     |
-| `GetWithErr()`                  | `(T, error)`    | 同时获取值和错误        |
-| `Val()`                         | `Option[T]`     | 将 Ok 转为 Some    |
-| `Err()`                         | `Option[error]` | 将 Err 转为 Some   |
+| 方法                              | 返回类型                   | 描述               |
+|---------------------------------|------------------------|------------------|
+| `String()`                      | `string`               | 返回 Result 的字符串表示 |
+| `IsOk()`                        | `bool`                 | 是否成功             |
+| `IsErr()`                       | `bool`                 | 是否失败             |
+| `Has(value T)`                  | `bool`                 | 是否为 Ok 且值相等      |
+| `HasFunc(func(T) bool)`         | `bool`                 | 是否为 Ok 且值满足条件    |
+| `HasErr(error)`                 | `bool`                 | 是否为 Err 且错误相等    |
+| `HasErrFunc(func(error) bool)`  | `bool`                 | 是否为 Err 且错误满足函数  |
+| `Do(func(T))`                   | `Result[T]`            | 若为 Ok 执行函数       |
+| `ElseDo(func(error))`           | `Result[T]`            | 若为 Err 执行函数      |
+| `Or(Result[T])`                 | `Result[T]`            | 若为 Err 返回备选      |
+| `OrFunc(func(error) Result[T])` | `Result[T]`            | 若为 Err 执行函数并返回   |
+| `MapErr(func(error) error)`     | `Result[T]`            | 映射错误             |
+| `Get()`                         | `T`                    | 获取值或 panic       |
+| `GetOr(v T)`                    | `T`                    | 获取值或返回默认         |
+| `GetOrZero()`                   | `T`                    | 获取值或返回零值         |
+| `GetOrFunc(f func(error) T)`    | `T`                    | 获取值或调用函数         |
+| `GetErr()`                      | `error`                | 获取错误或 panic      |
+| `GetValErr()`                   | `(T, error)`           | 同时获取值和错误         |
+| `Val()`                         | `option.Option[T]`     | 将 Ok 转为 Some     |
+| `Err()`                         | `option.Option[error]` | 将 Err 转为 Some    |
 
 #### 函数列表
 
-| 函数                                                             | 返回类型        | 描述                 |
-|----------------------------------------------------------------|-------------|--------------------|
-| `RAnd(a Result[T], b Result[U])`                               | `Result[U]` | 若 a 成功，返回 b        |
-| `RAndFunc(r Result[T], f func(T) Result[U])`                   | `Result[U]` | 若成功则调用函数           |
-| `RMap(r Result[T], f func(T) U)`                               | `Result[U]` | 映射成功的值             |
-| `RMapOr(r Result[T], f func(T) U, v U)`                        | `U`         | 映射或返回默认值           |
-| `RMapOrFunc(r Result[T], okFn func(T) U, errFn func(error) U)` | `U`         | 成功用 okFn，失败用 errFn |
+| 函数                                                            | 返回类型        | 描述                 |
+|---------------------------------------------------------------|-------------|--------------------|
+| `And(a Result[T], b Result[U])`                               | `Result[U]` | 若 a 成功，返回 b        |
+| `AndFunc(r Result[T], f func(T) Result[U])`                   | `Result[U]` | 若成功则调用函数           |
+| `Map(r Result[T], f func(T) U)`                               | `Result[U]` | 映射成功的值             |
+| `MapOr(r Result[T], f func(T) U, v U)`                        | `U`         | 映射或返回默认值           |
+| `MapOrFunc(r Result[T], okFn func(T) U, errFn func(error) U)` | `U`         | 成功用 okFn，失败用 errFn |
 
 ---
 
 ## 📜 License
 
 MIT
-
