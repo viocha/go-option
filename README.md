@@ -68,7 +68,8 @@ func main() {
 
 * `Some[T](value T) Option[T]`
 * `None[T]() Option[T]`
-* `FromVal[T](val T, err error) Option[T]`
+* `From[T](val T, err error) Option[T]`
+* `FromPtr[T](val *T) Option[T]`
 
 #### 方法列表
 
@@ -89,8 +90,9 @@ func main() {
 | `GetOr(value T)`             | `T`          | 获取值或默认值           |
 | `GetOrFunc(f func() T)`      | `T`          | 获取值或调用函数返回默认值     |
 | `GetOrZero()`                | `T`          | 获取值或返回零值          |
+| `ToPtr()`                    | `*T`         | 将值转换为指针           |
 | `ToErr(err error)`           | `error`      | 无值返回错误            |
-| `GetValErr(err error)`       | `(T, error)` | 同时返回值和错误          |
+| `ToValErr(err error)`        | `(T, error)` | 同时返回值和错误          |
 
 #### 函数列表
 
@@ -115,8 +117,8 @@ func main() {
 
 * `Ok[T](value T) Result[T]`
 * `Err[T](error error) Result[T]`
-* `FromVal[T](val T, err error) Result[T]`
-* `FromOpt[T](o option.Option[T], err error) Result[T]`
+* `From[T](val T, err error) Result[T]`
+* `FromOption[T](o option.Option[T], err error) Result[T]`
 
 #### 方法列表
 
@@ -139,7 +141,8 @@ func main() {
 | `GetOrZero()`                   | `T`                    | 获取值或返回零值         |
 | `GetOrFunc(f func(error) T)`    | `T`                    | 获取值或调用函数         |
 | `GetErr()`                      | `error`                | 获取错误或 panic      |
-| `GetValErr()`                   | `(T, error)`           | 同时获取值和错误         |
+| `ToValErr()`                    | `(T, error)`           | 同时获取值和错误         |
+| `ToPtr()`                       | `*T`                   | 将值转换为指针           |
 | `Val()`                         | `option.Option[T]`     | 将 Ok 转为 Some     |
 | `Err()`                         | `option.Option[error]` | 将 Err 转为 Some    |
 

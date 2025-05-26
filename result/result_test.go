@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-
+	
 	"github.com/viocha/go-option/option"
 )
 
@@ -17,7 +17,7 @@ func TestOkAndErr(t *testing.T) {
 	if r1.Get() != 123 {
 		t.Errorf("Expected value 123, got %v", r1.Get())
 	}
-
+	
 	errExample := errors.New("test error")
 	r2 := Err[int](errExample)
 	if !r2.IsErr() || r2.IsOk() {
@@ -62,12 +62,12 @@ func TestHasErrFunc(t *testing.T) {
 func TestDoAndElseDo_Result(t *testing.T) {
 	okCalled := false
 	errCalled := false
-
+	
 	Ok("ok").Do(func(v string) { okCalled = true }).ElseDo(func(e error) { errCalled = true })
 	if !okCalled || errCalled {
 		t.Errorf("Expected Do to be called, ElseDo not to be called")
 	}
-
+	
 	okCalled, errCalled = false, false
 	Err[string](errors.New("error")).Do(func(v string) { okCalled = true }).ElseDo(func(e error) { errCalled = true })
 	if okCalled || !errCalled {
@@ -105,7 +105,7 @@ func TestMapErr(t *testing.T) {
 	if !r2.HasErrFunc(func(e error) bool { return e.Error() == "wrapped: origin" }) {
 		t.Errorf("Expected wrapped error message")
 	}
-
+	
 	ok := Ok(1)
 	okMapped := ok.MapErr(func(e error) error { return errors.New("should not run") })
 	if !okMapped.IsOk() || okMapped.Get() != 1 {
@@ -115,13 +115,13 @@ func TestMapErr(t *testing.T) {
 
 func TestGetValErr(t *testing.T) {
 	ok := Ok("abc")
-	v, err := ok.GetValErr()
+	v, err := ok.ToValErr()
 	if err != nil || v != "abc" {
 		t.Errorf("Expected value 'abc' with nil error")
 	}
-
+	
 	r := Err[string](errors.New("fail"))
-	_, err = r.GetValErr()
+	_, err = r.ToValErr()
 	if err == nil {
 		t.Errorf("Expected error from GetWithErr")
 	}
@@ -133,7 +133,7 @@ func TestMap_Result(t *testing.T) {
 	if !mapped.IsOk() || mapped.Get() != "2!" {
 		t.Errorf("Expected mapped value to be '2!'")
 	}
-
+	
 	errR := Err[int](errors.New("fail map"))
 	mappedErr := Map(errR, func(x int) string { return "should not run" })
 	if mappedErr.IsOk() {
@@ -150,7 +150,7 @@ func TestMapOr_Result(t *testing.T) {
 	if resOk != "val: 3" {
 		t.Errorf("Expected MapOr on Ok to return mapped value, got %s", resOk)
 	}
-
+	
 	errVal := errors.New("fail")
 	errR := Err[int](errVal)
 	defaultVal := "default"
@@ -179,13 +179,13 @@ func TestPanicOnGetErr(t *testing.T) {
 }
 
 func TestFromVal_Result(t *testing.T) {
-	r1 := FromVal(10, nil)
+	r1 := From(10, nil)
 	if !r1.IsOk() || r1.Get() != 10 {
 		t.Errorf("Expected Ok(10), got %v", r1)
 	}
-
+	
 	err := errors.New("fromval error")
-	r2 := FromVal(0, err)
+	r2 := From(0, err)
 	if !r2.IsErr() || !r2.HasErr(err) {
 		t.Errorf("Expected Err(fromval error), got %v", r2)
 	}
@@ -194,14 +194,14 @@ func TestFromVal_Result(t *testing.T) {
 func TestFromOpt_Result(t *testing.T) {
 	optSome := option.Some(5)
 	errConv := errors.New("conversion error")
-
-	r1 := FromOpt(optSome, errConv)
+	
+	r1 := FromOption(optSome, errConv)
 	if !r1.IsOk() || r1.Get() != 5 {
 		t.Errorf("Expected Ok(5) from Some, got %v", r1)
 	}
-
+	
 	optNone := option.None[int]()
-	r2 := FromOpt(optNone, errConv)
+	r2 := FromOption(optNone, errConv)
 	if !r2.IsErr() || !r2.HasErr(errConv) {
 		t.Errorf("Expected Err(conversion error) from None, got %v", r2)
 	}
@@ -212,7 +212,7 @@ func TestString_Result(t *testing.T) {
 	if !strings.HasPrefix(okStr, "Ok[int]") || !strings.Contains(okStr, "123") {
 		t.Errorf("Expected Ok string representation, got %s", okStr)
 	}
-
+	
 	err := errors.New("test error for string")
 	errStr := Err[string](err).String()
 	if !strings.HasPrefix(errStr, "Err[string]") || !strings.Contains(errStr, "test error for string") {
@@ -225,7 +225,7 @@ func TestGetOr_Result(t *testing.T) {
 	if rOk.GetOr(0) != 10 {
 		t.Errorf("Expected GetOr on Ok to return value, got %d", rOk.GetOr(0))
 	}
-
+	
 	rErr := Err[int](errors.New("err"))
 	if rErr.GetOr(0) != 0 {
 		t.Errorf("Expected GetOr on Err to return default, got %d", rErr.GetOr(0))
@@ -237,12 +237,12 @@ func TestGetOrZero_Result(t *testing.T) {
 	if rOk.GetOrZero() != 10 {
 		t.Errorf("Expected GetOrZero on Ok to return value, got %d", rOk.GetOrZero())
 	}
-
+	
 	rErrStr := Err[string](errors.New("err"))
 	if rErrStr.GetOrZero() != "" {
 		t.Errorf("Expected GetOrZero on Err to return zero value for string, got '%s'", rErrStr.GetOrZero())
 	}
-
+	
 	rErrInt := Err[int](errors.New("err"))
 	if rErrInt.GetOrZero() != 0 {
 		t.Errorf("Expected GetOrZero on Err to return zero value for int, got %d", rErrInt.GetOrZero())
@@ -255,7 +255,7 @@ func TestGetOrFunc_Result(t *testing.T) {
 	if valOk != 10 {
 		t.Errorf("Expected GetOrFunc on Ok to return value, got %d", valOk)
 	}
-
+	
 	errVal := errors.New("err for getorfunc")
 	rErr := Err[int](errVal)
 	valErr := rErr.GetOrFunc(func(e error) int {
@@ -274,7 +274,7 @@ func TestVal_Result(t *testing.T) {
 	if !optSome.IsSome() || optSome.Get() != 100 {
 		t.Errorf("Expected Val on Ok to return Some(100), got %v", optSome)
 	}
-
+	
 	optNone := Err[int](errors.New("err")).Val()
 	if optNone.IsSome() {
 		t.Errorf("Expected Val on Err to return None, got %v", optNone)
@@ -286,7 +286,7 @@ func TestErr_Result_Method(t *testing.T) { // Renamed to avoid conflict with con
 	if optNone.IsSome() {
 		t.Errorf("Expected Err method on Ok to return None, got %v", optNone)
 	}
-
+	
 	errVal := errors.New("err for Err method")
 	optSomeErr := Err[int](errVal).Err()
 	if !optSomeErr.IsSome() || !errors.Is(optSomeErr.Get(), errVal) {
@@ -299,22 +299,22 @@ func TestAnd_Result(t *testing.T) {
 	ok2 := Ok("hello")
 	err1 := Err[int](errors.New("err1"))
 	err2 := Err[string](errors.New("err2"))
-
+	
 	res1 := And(ok1, ok2)
 	if !res1.IsOk() || res1.Get() != "hello" {
 		t.Errorf("Expected And(Ok, Ok) to be Ok(value from second), got %v", res1)
 	}
-
+	
 	res2 := And(err1, ok2)
 	if !res2.IsErr() || !res2.HasErr(err1.GetErr()) {
 		t.Errorf("Expected And(Err, Ok) to be Err(from first), got %v", res2)
 	}
-
+	
 	res3 := And(ok1, err2)
 	if !res3.IsErr() || !res3.HasErr(err2.GetErr()) {
 		t.Errorf("Expected And(Ok, Err) to be Err(from second), got %v", res3)
 	}
-
+	
 	res4 := And(err1, err2) // Though err2 is Err, err1 is returned
 	if !res4.IsErr() || !res4.HasErr(err1.GetErr()) {
 		t.Errorf("Expected And(Err, Err) to be Err(from first), got %v", res4)
@@ -324,14 +324,14 @@ func TestAnd_Result(t *testing.T) {
 func TestAndFunc_Result(t *testing.T) {
 	okVal := Ok(5)
 	errVal := Err[int](errors.New("andfunc err"))
-
+	
 	res1 := AndFunc(okVal, func(v int) Result[string] {
 		return Ok(fmt.Sprintf("val:%d", v))
 	})
 	if !res1.IsOk() || res1.Get() != "val:5" {
 		t.Errorf("Expected AndFunc on Ok to execute func and return Ok, got %v", res1)
 	}
-
+	
 	res2 := AndFunc(errVal, func(v int) Result[string] {
 		t.Error("AndFunc's func called on Err")
 		return Ok("should not happen")
@@ -339,7 +339,7 @@ func TestAndFunc_Result(t *testing.T) {
 	if !res2.IsErr() || !res2.HasErr(errVal.GetErr()) {
 		t.Errorf("Expected AndFunc on Err to return original Err, got %v", res2)
 	}
-
+	
 	expectedErrFromFunc := errors.New("err from func")
 	res3 := AndFunc(okVal, func(v int) Result[string] {
 		return Err[string](expectedErrFromFunc)
@@ -358,7 +358,7 @@ func TestMapOrFunc_Result(t *testing.T) {
 	if valOk != "ok-10" {
 		t.Errorf("Expected MapOrFunc on Ok to use okFn, got %s", valOk)
 	}
-
+	
 	errContent := errors.New("maporfunc error")
 	errRes := Err[int](errContent)
 	valErr := MapOrFunc(errRes,

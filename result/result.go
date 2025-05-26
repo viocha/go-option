@@ -30,7 +30,7 @@ func Err[T any](err error) Result[T] {
 }
 
 // 将 T 和 error 转换为 Result[T]
-func FromVal[T any](val T, err error) Result[T] {
+func From[T any](val T, err error) Result[T] {
 	if err != nil {
 		return Err[T](err)
 	}
@@ -38,7 +38,7 @@ func FromVal[T any](val T, err error) Result[T] {
 }
 
 // 将 Option[T] 和 error 转换为 Result[T]
-func FromOpt[T any](o opt.Option[T], err error) Result[T] {
+func FromOption[T any](o opt.Option[T], err error) Result[T] {
 	if o.IsSome() {
 		return Ok[T](o.Get())
 	}
@@ -159,11 +159,19 @@ func (r Result[T]) GetErr() error {
 }
 
 // 同时返回值和错误
-func (r Result[T]) GetValErr() (T, error) {
+func (r Result[T]) ToValErr() (T, error) {
 	if r.IsOk() {
 		return r.Get(), nil
 	}
 	return *new(T), r.err
+}
+
+
+func (r Result[T]) ToPtr() *T {
+	if r.IsOk() {
+		return r.val
+	}
+	return nil
 }
 
 // ========================== 和 opt.Option 转换 ============================

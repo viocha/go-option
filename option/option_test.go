@@ -144,13 +144,13 @@ func TestOption_ToErr(t *testing.T) {
 func TestOption_GetValErr(t *testing.T) {
 	errMsg := errors.New("value is missing for GetValErr")
 	none := None[int]()
-	val, err := none.GetValErr(errMsg)
+	val, err := none.ToValErr(errMsg)
 	if err == nil || !errors.Is(err, errMsg) || val != 0 {
 		t.Error("Expected error and zero value from GetValErr on None")
 	}
 
 	some := Some(5)
-	valSome, errSome := some.GetValErr(errMsg)
+	valSome, errSome := some.ToValErr(errMsg)
 	if errSome != nil || valSome != 5 {
 		t.Errorf("Expected value 5 and nil error from GetValErr on Some, got val %v, err %v", valSome, errSome)
 	}
@@ -254,13 +254,13 @@ func TestOption_String(t *testing.T) {
 }
 
 func TestOption_FromVal(t *testing.T) {
-	opt1 := FromVal(10, nil)
+	opt1 := From(10, nil)
 	if !opt1.IsSome() || opt1.Get() != 10 {
 		t.Errorf("Expected FromVal with nil error to be Some(10), got %v", opt1)
 	}
 
 	err := errors.New("fromval error")
-	opt2 := FromVal(0, err)
+	opt2 := From(0, err)
 	if opt2.IsSome() {
 		t.Errorf("Expected FromVal with error to be None, got %v", opt2)
 	}

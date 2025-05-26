@@ -13,7 +13,6 @@ type Option[T any] struct {
 
 // ========================== 构造函数 =============================
 
-
 // Some 构造一个 Option[T] 的 Some 变体。
 func Some[T any](value T) Option[T] {
 	return Option[T]{val: &value, exists: true}
@@ -24,11 +23,18 @@ func None[T any]() Option[T] {
 	return Option[T]{val: nil, exists: false}
 }
 
-func FromVal[T any](val T, err error) Option[T] {
+func From[T any](val T, err error) Option[T] {
 	if err != nil {
 		return None[T]()
 	}
 	return Some(val)
+}
+
+func FromPtr[T any](val *T) Option[T] {
+	if val == nil {
+		return None[T]()
+	}
+	return Some(*val)
 }
 
 // ========================== 方法 =============================
@@ -148,6 +154,13 @@ func (o Option[T]) GetOrZero() T {
 	return *new(T)
 }
 
+func (o Option[T]) ToPtr() *T {
+	if o.exists {
+		return o.val
+	}
+	return nil
+}
+
 // 如果不存在值，则返回给定的错误，否则返回 nil
 func (o Option[T]) ToErr(e error) error {
 	if o.exists {
@@ -157,7 +170,7 @@ func (o Option[T]) ToErr(e error) error {
 }
 
 // 同时返回value和error
-func (o Option[T]) GetValErr(err error) (T, error) {
+func (o Option[T]) ToValErr(err error) (T, error) {
 	if o.exists {
 		return o.Get(), nil
 	}
