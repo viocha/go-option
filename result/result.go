@@ -94,11 +94,10 @@ func (r Result[T]) Do(f func(T)) Result[T] {
 }
 
 // Else 如果 Result 是 Err，则对其包含的错误调用 f。
-func (r Result[T]) Else(f func(error)) Result[T] {
+func (r Result[T]) Else(f func(error)) {
 	if !r.IsOk() {
 		f(r.err)
 	}
-	return r
 }
 
 // 如果Result是Ok，则返回原来的Result，否则返回一个新的Result
