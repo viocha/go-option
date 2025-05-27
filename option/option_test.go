@@ -67,7 +67,7 @@ func TestDoAndElseDo(t *testing.T) {
 	}
 
 	none := None[string]()
-	none.ElseDo(func() {
+	none.Else(func() {
 		called = true
 	})
 	if !called {

@@ -79,7 +79,7 @@ func (o Option[T]) Do(f func(T)) Option[T] {
 }
 
 // 不存在值则调用f
-func (o Option[T]) ElseDo(f func()) {
+func (o Option[T]) Else(f func()) {
 	if !o.exists {
 		f()
 	}

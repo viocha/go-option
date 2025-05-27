@@ -39,7 +39,7 @@ func main() {
 	resSuccess := result.Ok("success")
 	resSuccess.Do(func(s string) {
 		fmt.Println("OK:", s) // OK: success
-	}).ElseDo(func(err error) {
+	}).Else(func(err error) {
 		fmt.Println("Error:", err)
 	})
 
@@ -81,7 +81,7 @@ func main() {
 | `Has(value T)`               | `bool`       | 值是否等于指定值          |
 | `HasFunc(f func(T) bool)`    | `bool`       | 值是否满足函数条件         |
 | `Do(f func(T))`              | `Option[T]`  | 如果有值则执行函数         |
-| `ElseDo(f func())`           |              | 如果无值则执行函数         |
+| `Else(f func())`             |              | 如果无值则执行函数         |
 | `Filter(f func(T) bool)`     | `Option[T]`  | 满足条件则保留，否则返回 None |
 | `Or(b Option[T])`            | `Option[T]`  | 若无值则返回备选          |
 | `OrFunc(f func() Option[T])` | `Option[T]`  | 若无值则调用函数并返回其结果    |
@@ -132,7 +132,7 @@ func main() {
 | `HasErr(error)`                 | `bool`                 | 是否为 Err 且错误相等    |
 | `HasErrFunc(func(error) bool)`  | `bool`                 | 是否为 Err 且错误满足函数  |
 | `Do(func(T))`                   | `Result[T]`            | 若为 Ok 执行函数       |
-| `ElseDo(func(error))`           | `Result[T]`            | 若为 Err 执行函数      |
+| `Else(func(error))`             | `Result[T]`            | 若为 Err 执行函数      |
 | `Or(Result[T])`                 | `Result[T]`            | 若为 Err 返回备选      |
 | `OrFunc(func(error) Result[T])` | `Result[T]`            | 若为 Err 执行函数并返回   |
 | `MapErr(func(error) error)`     | `Result[T]`            | 映射错误             |
@@ -142,7 +142,7 @@ func main() {
 | `GetOrFunc(f func(error) T)`    | `T`                    | 获取值或调用函数         |
 | `GetErr()`                      | `error`                | 获取错误或 panic      |
 | `ToValErr()`                    | `(T, error)`           | 同时获取值和错误         |
-| `ToPtr()`                       | `*T`                   | 将值转换为指针           |
+| `ToPtr()`                       | `*T`                   | 将值转换为指针          |
 | `Val()`                         | `option.Option[T]`     | 将 Ok 转为 Some     |
 | `Err()`                         | `option.Option[error]` | 将 Err 转为 Some    |
 

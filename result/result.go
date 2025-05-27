@@ -13,8 +13,8 @@ type Result[T any] struct {
 	val *T
 	err error
 }
-// ========================== 构造函数 =============================
 
+// ========================== 构造函数 =============================
 
 // 构造一个 Result[T] 的 Ok 变体
 func Ok[T any](value T) Result[T] {
@@ -46,7 +46,6 @@ func FromOption[T any](o opt.Option[T], err error) Result[T] {
 }
 
 // ========================== 方法 =============================
-
 
 func (r Result[T]) String() string {
 	if r.IsOk() {
@@ -94,8 +93,8 @@ func (r Result[T]) Do(f func(T)) Result[T] {
 	return r
 }
 
-// ElseDo 如果 Result 是 Err，则对其包含的错误调用 f。
-func (r Result[T]) ElseDo(f func(error)) Result[T] {
+// Else 如果 Result 是 Err，则对其包含的错误调用 f。
+func (r Result[T]) Else(f func(error)) Result[T] {
 	if !r.IsOk() {
 		f(r.err)
 	}
@@ -165,7 +164,6 @@ func (r Result[T]) ToValErr() (T, error) {
 	}
 	return *new(T), r.err
 }
-
 
 func (r Result[T]) ToPtr() *T {
 	if r.IsOk() {

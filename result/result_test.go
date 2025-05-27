@@ -63,13 +63,13 @@ func TestDoAndElseDo_Result(t *testing.T) {
 	okCalled := false
 	errCalled := false
 	
-	Ok("ok").Do(func(v string) { okCalled = true }).ElseDo(func(e error) { errCalled = true })
+	Ok("ok").Do(func(v string) { okCalled = true }).Else(func(e error) { errCalled = true })
 	if !okCalled || errCalled {
 		t.Errorf("Expected Do to be called, ElseDo not to be called")
 	}
 	
 	okCalled, errCalled = false, false
-	Err[string](errors.New("error")).Do(func(v string) { okCalled = true }).ElseDo(func(e error) { errCalled = true })
+	Err[string](errors.New("error")).Do(func(v string) { okCalled = true }).Else(func(e error) { errCalled = true })
 	if okCalled || !errCalled {
 		t.Errorf("Expected ElseDo to be called, Do not to be called")
 	}
