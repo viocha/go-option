@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 	
-	"github.com/viocha/go-option/option"
+	"github.com/viocha/go-option"
 )
 
 func TestOkAndErr(t *testing.T) {
@@ -63,30 +63,22 @@ func TestDoAndElseDo_Result(t *testing.T) {
 	okCalled := false
 	errCalled := false
 	
-	Ok("ok").Do(func(v string) { okCalled = true }).Else(func(e error) { errCalled = true })
+	Ok("ok").Try(func(v string) { okCalled = true }).Catch(func(e error) { errCalled = true })
 	if !okCalled || errCalled {
 		t.Errorf("Expected Do to be called, ElseDo not to be called")
 	}
 	
 	okCalled, errCalled = false, false
-	Err[string](errors.New("error")).Do(func(v string) { okCalled = true }).Else(func(e error) { errCalled = true })
+	Err[string](errors.New("error")).Try(func(v string) { okCalled = true }).Catch(func(e error) { errCalled = true })
 	if okCalled || !errCalled {
 		t.Errorf("Expected ElseDo to be called, Do not to be called")
 	}
 }
 
-func TestOr(t *testing.T) {
-	r1 := Err[int](errors.New("fail"))
-	r2 := Ok(99)
-	result := r1.Or(r2)
-	if !result.IsOk() || result.Get() != 99 {
-		t.Errorf("Expected fallback to second Result with value 99")
-	}
-}
 
 func TestOrFunc(t *testing.T) {
 	err := errors.New("fallback")
-	r := Err[int](errors.New("original")).OrFunc(func(e error) Result[int] {
+	r := Err[int](errors.New("original")).Else(func(e error) Result[int] {
 		if e.Error() == "original" {
 			return Ok(1)
 		}
@@ -115,13 +107,13 @@ func TestMapErr(t *testing.T) {
 
 func TestGetValErr(t *testing.T) {
 	ok := Ok("abc")
-	v, err := ok.ToValErr()
+	v, err := ok.GetValErr()
 	if err != nil || v != "abc" {
 		t.Errorf("Expected value 'abc' with nil error")
 	}
 	
 	r := Err[string](errors.New("fail"))
-	_, err = r.ToValErr()
+	_, err = r.GetValErr()
 	if err == nil {
 		t.Errorf("Expected error from GetWithErr")
 	}
@@ -192,7 +184,7 @@ func TestFromVal_Result(t *testing.T) {
 }
 
 func TestFromOpt_Result(t *testing.T) {
-	optSome := option.Some(5)
+	optSome := option.Val(5)
 	errConv := errors.New("conversion error")
 	
 	r1 := FromOption(optSome, errConv)
@@ -200,7 +192,7 @@ func TestFromOpt_Result(t *testing.T) {
 		t.Errorf("Expected Ok(5) from Some, got %v", r1)
 	}
 	
-	optNone := option.None[int]()
+	optNone := option.Nul[int]()
 	r2 := FromOption(optNone, errConv)
 	if !r2.IsErr() || !r2.HasErr(errConv) {
 		t.Errorf("Expected Err(conversion error) from None, got %v", r2)
@@ -271,53 +263,26 @@ func TestGetOrFunc_Result(t *testing.T) {
 
 func TestVal_Result(t *testing.T) {
 	optSome := Ok(100).Val()
-	if !optSome.IsSome() || optSome.Get() != 100 {
+	if !optSome.IsVal() || optSome.Get() != 100 {
 		t.Errorf("Expected Val on Ok to return Some(100), got %v", optSome)
 	}
 	
 	optNone := Err[int](errors.New("err")).Val()
-	if optNone.IsSome() {
+	if optNone.IsVal() {
 		t.Errorf("Expected Val on Err to return None, got %v", optNone)
 	}
 }
 
 func TestErr_Result_Method(t *testing.T) { // Renamed to avoid conflict with constructor
 	optNone := Ok(100).Err()
-	if optNone.IsSome() {
+	if optNone.IsVal() {
 		t.Errorf("Expected Err method on Ok to return None, got %v", optNone)
 	}
 	
 	errVal := errors.New("err for Err method")
 	optSomeErr := Err[int](errVal).Err()
-	if !optSomeErr.IsSome() || !errors.Is(optSomeErr.Get(), errVal) {
+	if !optSomeErr.IsVal() || !errors.Is(optSomeErr.Get(), errVal) {
 		t.Errorf("Expected Err method on Err to return Some(error), got %v", optSomeErr)
-	}
-}
-
-func TestAnd_Result(t *testing.T) {
-	ok1 := Ok(1)
-	ok2 := Ok("hello")
-	err1 := Err[int](errors.New("err1"))
-	err2 := Err[string](errors.New("err2"))
-	
-	res1 := And(ok1, ok2)
-	if !res1.IsOk() || res1.Get() != "hello" {
-		t.Errorf("Expected And(Ok, Ok) to be Ok(value from second), got %v", res1)
-	}
-	
-	res2 := And(err1, ok2)
-	if !res2.IsErr() || !res2.HasErr(err1.GetErr()) {
-		t.Errorf("Expected And(Err, Ok) to be Err(from first), got %v", res2)
-	}
-	
-	res3 := And(ok1, err2)
-	if !res3.IsErr() || !res3.HasErr(err2.GetErr()) {
-		t.Errorf("Expected And(Ok, Err) to be Err(from second), got %v", res3)
-	}
-	
-	res4 := And(err1, err2) // Though err2 is Err, err1 is returned
-	if !res4.IsErr() || !res4.HasErr(err1.GetErr()) {
-		t.Errorf("Expected And(Err, Err) to be Err(from first), got %v", res4)
 	}
 }
 
@@ -325,14 +290,14 @@ func TestAndFunc_Result(t *testing.T) {
 	okVal := Ok(5)
 	errVal := Err[int](errors.New("andfunc err"))
 	
-	res1 := AndFunc(okVal, func(v int) Result[string] {
+	res1 := Then(okVal, func(v int) Result[string] {
 		return Ok(fmt.Sprintf("val:%d", v))
 	})
 	if !res1.IsOk() || res1.Get() != "val:5" {
 		t.Errorf("Expected AndFunc on Ok to execute func and return Ok, got %v", res1)
 	}
 	
-	res2 := AndFunc(errVal, func(v int) Result[string] {
+	res2 := Then(errVal, func(v int) Result[string] {
 		t.Error("AndFunc's func called on Err")
 		return Ok("should not happen")
 	})
@@ -341,7 +306,7 @@ func TestAndFunc_Result(t *testing.T) {
 	}
 	
 	expectedErrFromFunc := errors.New("err from func")
-	res3 := AndFunc(okVal, func(v int) Result[string] {
+	res3 := Then(okVal, func(v int) Result[string] {
 		return Err[string](expectedErrFromFunc)
 	})
 	if !res3.IsErr() || !res3.HasErr(expectedErrFromFunc) {

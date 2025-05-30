@@ -1,11 +1,10 @@
-package go_option
+package option
 
 import (
 	"fmt"
 	"reflect"
 )
 
-// Option 表示一个可选值：每个 Option[T] 要么是 Some 并包含一个值，要么是 None 且不包含值。
 type Option[T any] struct {
 	val    *T
 	exists bool
@@ -13,28 +12,26 @@ type Option[T any] struct {
 
 // ========================== 构造函数 =============================
 
-// Some 构造一个 Option[T] 的 Some 变体。
-func Some[T any](value T) Option[T] {
+func Val[T any](value T) Option[T] {
 	return Option[T]{val: &value, exists: true}
 }
 
-// None 构造一个 Option[T] 的 None 变体。
-func None[T any]() Option[T] {
+func Nul[T any]() Option[T] {
 	return Option[T]{val: nil, exists: false}
 }
 
 func From[T any](val T, err error) Option[T] {
 	if err != nil {
-		return None[T]()
+		return Nul[T]()
 	}
-	return Some(val)
+	return Val(val)
 }
 
 func FromPtr[T any](val *T) Option[T] {
 	if val == nil {
-		return None[T]()
+		return Nul[T]()
 	}
-	return Some(*val)
+	return Val(*val)
 }
 
 // ========================== 方法 =============================
@@ -48,16 +45,16 @@ func (o Option[T]) String() string {
 }
 
 // 存在值
-func (o Option[T]) IsSome() bool {
+func (o Option[T]) IsVal() bool {
 	return o.exists
 }
 
 // 不存在值
-func (o Option[T]) IsNone() bool {
+func (o Option[T]) IsNul() bool {
 	return !o.exists
 }
 
-// 判断是否存在值并且值等于给定的值，使用 reflect.DeepEqual 进行比较
+// 判断是否存在指定值，使用 reflect.DeepEqual 进行比较
 func (o Option[T]) Has(value T) bool {
 	if !o.exists {
 		return false
@@ -65,59 +62,42 @@ func (o Option[T]) Has(value T) bool {
 	return reflect.DeepEqual(o.Get(), value)
 }
 
-// 判断是否存在值且满足给定的条件函数
+// 判断是否存在满足条件的值
 func (o Option[T]) HasFunc(f func(T) bool) bool {
 	return o.exists && f(o.Get())
 }
 
-// 存在值则对其包含的值调用 f，并返回原来的 Option
-func (o Option[T]) Do(f func(T)) Option[T] {
+func (o Option[T]) Try(f func(T)) Option[T] {
 	if o.exists {
 		f(o.Get())
 	}
 	return o
 }
 
-// 不存在值则调用f
-func (o Option[T]) Else(f func()) {
+func (o Option[T]) Catch(f func()) {
 	if !o.exists {
 		f()
 	}
 }
 
-// 如果存在值且满足条件f，则返回原来的 Option，否则返回 None
+func (o Option[T]) Finally(f func()) Option[T] {
+	f()
+	return o
+}
+
 func (o Option[T]) Filter(f func(T) bool) Option[T] {
 	if o.exists && f(o.Get()) {
 		return o
 	}
-	return None[T]()
+	return Nul[T]()
 }
 
-// 如果存在值，则返回原来的 Option，否则返回给定的 Option
-func (o Option[T]) Or(b Option[T]) Option[T] {
-	if o.exists {
-		return o
-	}
-	return b
-}
-
-// 如果存在值，则返回原来的 Option，否则调用f并返回其结果
-func (o Option[T]) OrFunc(f func() Option[T]) Option[T] {
+// 不存在值时，执行给定的函数构造一个新的 Option
+func (o Option[T]) Else(f func() Option[T]) Option[T] {
 	if o.exists {
 		return o
 	}
 	return f()
-}
-
-// 仅当其中一个 Option 存在值时，返回该 Option，否则返回 None
-func (o Option[T]) Xor(b Option[T]) Option[T] {
-	if o.exists && !b.exists {
-		return o
-	}
-	if !o.exists && b.exists {
-		return b
-	}
-	return None[T]()
 }
 
 // ============================= 获取值或 error ================================
@@ -130,7 +110,6 @@ func (o Option[T]) Get() T {
 	return *o.val
 }
 
-// 存在值则返回该值，否则返回给定的值。
 func (o Option[T]) GetOr(value T) T {
 	if o.exists {
 		return o.Get()
@@ -138,7 +117,6 @@ func (o Option[T]) GetOr(value T) T {
 	return value
 }
 
-// 存在值则返回该值，否则调用给定的函数并返回其结果。
 func (o Option[T]) GetOrFunc(f func() T) T {
 	if o.exists {
 		return o.Get()
@@ -146,7 +124,6 @@ func (o Option[T]) GetOrFunc(f func() T) T {
 	return f()
 }
 
-// 存在值则返回该值，否则返回类型 T 的零值
 func (o Option[T]) GetOrZero() T {
 	if o.exists {
 		return o.Get()
@@ -161,7 +138,6 @@ func (o Option[T]) ToPtr() *T {
 	return nil
 }
 
-// 如果不存在值，则返回给定的错误，否则返回 nil
 func (o Option[T]) ToErr(e error) error {
 	if o.exists {
 		return nil
@@ -169,7 +145,6 @@ func (o Option[T]) ToErr(e error) error {
 	return e
 }
 
-// 同时返回value和error
 func (o Option[T]) ToValErr(err error) (T, error) {
 	if o.exists {
 		return o.Get(), nil
@@ -179,31 +154,25 @@ func (o Option[T]) ToValErr(err error) (T, error) {
 
 // ================================ 逻辑与  =============================
 
-// 如果两个 Option 都存在值，则返回第二个 Option，否则返回 None
-func And[T any, U any](a Option[T], b Option[U]) Option[U] {
-	if a.exists && b.exists {
-		return b
-	}
-	return None[U]()
-}
-
-// 如果存在值，使用f处理该值并返回新的 Option
-func AndFunc[T any, U any](o Option[T], f func(T) Option[U]) Option[U] {
+// 如果存在值，使用f构造一个新的 Option
+func Then[T any, U any](o Option[T], f func(T) Option[U]) Option[U] {
 	if o.exists {
 		return f(o.Get())
 	}
-	return None[U]()
+	return Nul[U]()
 }
 
 // =============================== Map操作 =============================
 
-// 若存在值，则使用f转换该值构造一个 Option 并返回
+// 若存在值，则使用f转换该值，构造一个 Option
 func Map[T any, U any](o Option[T], f func(T) U) Option[U] {
 	if o.exists {
-		return Some(f(o.Get()))
+		return Val(f(o.Get()))
 	}
-	return None[U]()
+	return Nul[U]()
 }
+
+// =============================== 带有默认值的Map操作 =============================
 
 // 若存在值，则使用f转换该值并返回，否则返回给定的默认值
 func MapOr[T any, U any](o Option[T], f func(T) U, v U) U {
