@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"errors" // 示例中可能需要
 
-	"github.com/viocha/go-option/option"
+	"github.com/viocha/go-option"
 	"github.com/viocha/go-option/result"
 )
 

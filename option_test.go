@@ -1,4 +1,4 @@
-package option
+package go_option
 
 import (
 	"errors"

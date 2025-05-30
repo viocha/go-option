@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	
-	opt "github.com/viocha/go-option/option"
+	opt "github.com/viocha/go-option"
 )
 
 // Result[T] 是一个用于包装值和错误的类型。它要么是 Ok(T)（成功并包含一个值），要么是 Err(error)（错误并包含一个错误值）
