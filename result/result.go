@@ -6,6 +6,7 @@ import (
 	"reflect"
 	
 	opt "github.com/viocha/go-option"
+	"github.com/viocha/go-option/common"
 )
 
 type Result[T any] struct {
@@ -76,22 +77,36 @@ func (r Result[T]) HasErrFunc(f func(error) bool) bool {
 	return !r.IsOk() && f(r.err)
 }
 
+// ========================== 链式方法 ============================
+
 func (r Result[T]) Try(f func(T)) Result[T] {
-	if r.IsOk() {
+	if r.IsErr() {
+		return r
+	}
+	if err := common.DoSafe(func() {
 		f(r.Get())
+	}); err != nil {
+		return Err[T](err)
 	}
 	return r
 }
 
 func (r Result[T]) Catch(f func(error)) Result[T] {
-	if !r.IsOk() {
+	if r.IsOk() {
+		return r
+	}
+	if err := common.DoSafe(func() {
 		f(r.err)
+	}); err != nil {
+		return Err[T](err)
 	}
 	return r
 }
 
 func (r Result[T]) Finally(f func()) Result[T] {
-	f()
+	if err := common.DoSafe(f); err != nil {
+		return Err[T](err)
+	}
 	return r
 }
 
@@ -100,14 +115,26 @@ func (r Result[T]) Else(f func(error) Result[T]) Result[T] {
 	if r.IsOk() {
 		return r
 	}
-	return f(r.err)
+	var newResult Result[T]
+	if err := common.DoSafe(func() {
+		newResult = f(r.err)
+	}); err != nil {
+		return Err[T](err)
+	}
+	return newResult
 }
 
 func (r Result[T]) MapErr(f func(error) error) Result[T] {
-	if !r.IsOk() {
-		return Err[T](f(r.err))
+	if r.IsOk() {
+		return r
 	}
-	return r
+	var newResult Result[T]
+	if err := common.DoSafe(func() {
+		newResult = Err[T](f(r.err))
+	}); err != nil {
+		return Err[T](err)
+	}
+	return newResult
 }
 
 // =========================== 获取值或错误 ============================
@@ -173,35 +200,59 @@ func (r Result[T]) Err() opt.Option[error] {
 
 // Ok时则调用f得到一个新的Result
 func Then[T any, U any](r Result[T], f func(T) Result[U]) Result[U] {
-	if r.IsOk() {
-		return f(r.Get())
+	if r.IsErr() {
+		return Err[U](r.err)
 	}
-	return Err[U](r.err)
+	var newResult Result[U]
+	if err := common.DoSafe(func() {
+		newResult = f(r.Get())
+	}); err != nil {
+		return Err[U](err)
+	}
+	return newResult
 }
 
 // ==========================  Map操作 ============================
 // Ok时使用f转换其值，构造一个新的 Result
 func Map[T any, U any](r Result[T], f func(T) U) Result[U] {
-	if r.IsOk() {
-		return Ok(f(r.Get()))
+	if r.IsErr() {
+		return Err[U](r.err)
 	}
-	return Err[U](r.err)
+	var newResult Result[U]
+	if err := common.DoSafe(func() {
+		newResult = Ok(f(r.Get()))
+	}); err != nil {
+		return Err[U](err)
+	}
+	return newResult
 }
 
 // ==========================  带有默认值的Map操作 ============================
 
 // Ok时则使用f转换其值并返回，否则返回默认值 v
 func MapOr[T any, U any](r Result[T], f func(T) U, v U) U {
-	if r.IsOk() {
-		return f(r.Get())
+	if r.IsErr() {
+		return v
 	}
-	return v
+	var val U
+	if err := common.DoSafe(func() {
+		val = f(r.Get())
+	}); err != nil {
+		return v
+	}
+	return val
 }
 
 // Ok时调用okFn并返回其结果，否则调用errFn并返回其结果
 func MapOrFunc[T any, U any](r Result[T], okFn func(T) U, errFn func(error) U) U {
-	if r.IsOk() {
-		return okFn(r.Get())
+	if r.IsErr() {
+		return errFn(r.err)
 	}
-	return errFn(r.err)
+	var val U
+	if err := common.DoSafe(func() {
+		val = okFn(r.Get())
+	}); err != nil {
+		return errFn(err)
+	}
+	return val
 }
