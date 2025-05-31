@@ -85,7 +85,7 @@ func (o Option[T]) Try(f func(T)) Option[T] {
 	if o.IsNul() {
 		return o
 	}
-	if nil ==common.DoSafe(func() {
+	if nil == common.DoSafe(func() {
 		f(o.Get())
 	}) {
 		return o
@@ -97,14 +97,14 @@ func (o Option[T]) Catch(f func()) Option[T] {
 	if o.IsVal() {
 		return o
 	}
-	if nil ==common.DoSafe(f) {
+	if nil == common.DoSafe(f) {
 		return o
 	}
 	return Nul[T]()
 }
 
 func (o Option[T]) Finally(f func()) Option[T] {
-	if nil ==common.DoSafe(f) {
+	if nil == common.DoSafe(f) {
 		return o
 	}
 	return Nul[T]()
@@ -115,7 +115,7 @@ func (o Option[T]) Filter(f func(T) bool) Option[T] {
 		return Nul[T]()
 	}
 	result := o
-	if nil ==common.DoSafe(func() {
+	if nil == common.DoSafe(func() {
 		if !f(o.Get()) {
 			result = Nul[T]()
 		}
@@ -131,7 +131,7 @@ func (o Option[T]) Else(f func() Option[T]) Option[T] {
 		return o
 	}
 	var result Option[T]
-	if nil ==common.DoSafe(func() {
+	if nil == common.DoSafe(func() {
 		result = f()
 	}) {
 		return result
@@ -191,6 +191,22 @@ func (o Option[T]) ToValErr(err error) (T, error) {
 	return *new(T), err
 }
 
+// ================================ 常用类型的逻辑与方法 =============================
+
+func (o Option[T]) ThenT(f func(T) Option[T]) Option[T]                 { return Then(o, f) }
+func (o Option[T]) ThenInt(f func(T) Option[int]) Option[int]           { return Then(o, f) }
+func (o Option[T]) ThenFloat(f func(T) Option[float64]) Option[float64] { return Then(o, f) }
+func (o Option[T]) ThenStr(f func(T) Option[string]) Option[string]     { return Then(o, f) }
+func (o Option[T]) ThenBool(f func(T) Option[bool]) Option[bool]        { return Then(o, f) }
+
+// ================================ 常用类型的Map方法 =============================
+
+func (o Option[T]) MapT(f func(T) T) Option[T]                 { return Map(o, f) }
+func (o Option[T]) MapInt(f func(T) int) Option[int]           { return Map(o, f) }
+func (o Option[T]) MapFloat(f func(T) float64) Option[float64] { return Map(o, f) }
+func (o Option[T]) MapStr(f func(T) string) Option[string]     { return Map(o, f) }
+func (o Option[T]) MapBool(f func(T) bool) Option[bool]        { return Map(o, f) }
+
 // ================================ 逻辑与  =============================
 
 // 如果存在值，使用f构造一个新的 Option
@@ -199,7 +215,7 @@ func Then[T any, U any](o Option[T], f func(T) Option[U]) Option[U] {
 		return Nul[U]()
 	}
 	var result Option[U]
-	if nil ==common.DoSafe(func() {
+	if nil == common.DoSafe(func() {
 		result = f(o.Get())
 	}) {
 		return result
@@ -215,7 +231,7 @@ func Map[T any, U any](o Option[T], f func(T) U) Option[U] {
 		return Nul[U]()
 	}
 	var result Option[U]
-	if nil ==common.DoSafe(func() {
+	if nil == common.DoSafe(func() {
 		result = Val(f(o.Get()))
 	}) {
 		return result
@@ -229,7 +245,7 @@ func MapOr[T any, U any](o Option[T], f func(T) U, v U) U {
 	if o.IsNul() {
 		return v
 	}
-	if nil ==common.DoSafe(func() {
+	if nil == common.DoSafe(func() {
 		result = f(o.Get())
 	}) {
 		return result
@@ -243,7 +259,7 @@ func MapOrFunc[T any, U any](o Option[T], okFn func(T) U, defaultFn func() U) U 
 		return defaultFn()
 	}
 	var result U
-	if nil ==common.DoSafe(func() {
+	if nil == common.DoSafe(func() {
 		result = okFn(o.Get())
 	}) {
 		return result

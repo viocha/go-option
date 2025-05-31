@@ -43,6 +43,16 @@ func FromOption[T any](o opt.Option[T], err error) Result[T] {
 	return Err[T](err)
 }
 
+func FromFunc[T any](f func() T) Result[T] {
+	var result Result[T]
+	if err := common.DoSafe(func() {
+		result = Ok(f())
+	}); err != nil {
+		return Err[T](err)
+	}
+	return result
+}
+
 // ========================== 方法 =============================
 
 func (r Result[T]) String() string {
@@ -195,6 +205,23 @@ func (r Result[T]) Err() opt.Option[error] {
 	}
 	return opt.Nul[error]()
 }
+
+// ========================== 常用类型的逻辑与方法 ============================
+
+func (r Result[T]) ThenT(f func(T) Result[T]) Result[T]                 { return Then(r, f) }
+func (r Result[T]) ThenInt(f func(T) Result[int]) Result[int]           { return Then(r, f) }
+func (r Result[T]) ThenFloat(f func(T) Result[float64]) Result[float64] { return Then(r, f) }
+func (r Result[T]) ThenStr(f func(T) Result[string]) Result[string]     { return Then(r, f) }
+func (r Result[T]) ThenBool(f func(T) Result[bool]) Result[bool]        { return Then(r, f) }
+
+
+// ========================== 常用类型的Map方法 ============================
+
+func (r Result[T]) MapT(f func(T) T) Result[T]                 { return Map(r, f) }
+func (r Result[T]) MapInt(f func(T) int) Result[int]           { return Map(r, f) }
+func (r Result[T]) MapFloat(f func(T) float64) Result[float64] { return Map(r, f) }
+func (r Result[T]) MapStr(f func(T) string) Result[string]     { return Map(r, f) }
+func (r Result[T]) MapBool(f func(T) bool) Result[bool]        { return Map(r, f) }
 
 // ========================== 逻辑与 ============================
 
