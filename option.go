@@ -79,6 +79,58 @@ func (o Option[T]) HasFunc(f func(T) bool) bool {
 	return o.IsVal() && f(o.Get())
 }
 
+// ============================= 获取值或 error ================================
+
+// 如果存在值，则返回该值。否则 panic。
+func (o Option[T]) Get() T {
+	if o.IsNul() {
+		panic("called Option.Unwrap() on a None value")
+	}
+	return *o.val
+}
+
+func (o Option[T]) GetOr(value T) T {
+	if o.IsVal() {
+		return o.Get()
+	}
+	return value
+}
+
+func (o Option[T]) GetOrFunc(f func() T) T {
+	if o.IsVal() {
+		return o.Get()
+	}
+	return f()
+}
+
+func (o Option[T]) GetOrZero() T {
+	if o.IsVal() {
+		return o.Get()
+	}
+	return *new(T)
+}
+
+func (o Option[T]) ToPtr() *T {
+	if o.IsVal() {
+		return o.val
+	}
+	return nil
+}
+
+func (o Option[T]) ToErr(e error) error {
+	if o.IsVal() {
+		return nil
+	}
+	return e
+}
+
+func (o Option[T]) ToValErr(err error) (T, error) {
+	if o.IsVal() {
+		return o.Get(), nil
+	}
+	return *new(T), err
+}
+
 // ============================= 链式方法 ================================
 
 func (o Option[T]) Try(f func(T)) Option[T] {
@@ -139,56 +191,17 @@ func (o Option[T]) Else(f func() Option[T]) Option[T] {
 	return Nul[T]()
 }
 
-// ============================= 获取值或 error ================================
-
-// 如果存在值，则返回该值。否则 panic。
-func (o Option[T]) Get() T {
-	if o.IsNul() {
-		panic("called Option.Unwrap() on a None value")
-	}
-	return *o.val
-}
-
-func (o Option[T]) GetOr(value T) T {
+func (o Option[T]) ElseVal(f func() T) Option[T] {
 	if o.IsVal() {
-		return o.Get()
+		return o
 	}
-	return value
-}
-
-func (o Option[T]) GetOrFunc(f func() T) T {
-	if o.IsVal() {
-		return o.Get()
+	var result Option[T]
+	if nil == common.DoSafe(func() {
+		result = Val(f())
+	}) {
+		return result
 	}
-	return f()
-}
-
-func (o Option[T]) GetOrZero() T {
-	if o.IsVal() {
-		return o.Get()
-	}
-	return *new(T)
-}
-
-func (o Option[T]) ToPtr() *T {
-	if o.IsVal() {
-		return o.val
-	}
-	return nil
-}
-
-func (o Option[T]) ToErr(e error) error {
-	if o.IsVal() {
-		return nil
-	}
-	return e
-}
-
-func (o Option[T]) ToValErr(err error) (T, error) {
-	if o.IsVal() {
-		return o.Get(), nil
-	}
-	return *new(T), err
+	return Nul[T]()
 }
 
 // ================================ 常用类型的逻辑与方法 =============================

@@ -87,66 +87,6 @@ func (r Result[T]) HasErrFunc(f func(error) bool) bool {
 	return !r.IsOk() && f(r.err)
 }
 
-// ========================== 链式方法 ============================
-
-func (r Result[T]) Try(f func(T)) Result[T] {
-	if r.IsErr() {
-		return r
-	}
-	if err := common.DoSafe(func() {
-		f(r.Get())
-	}); err != nil {
-		return Err[T](err)
-	}
-	return r
-}
-
-func (r Result[T]) Catch(f func(error)) Result[T] {
-	if r.IsOk() {
-		return r
-	}
-	if err := common.DoSafe(func() {
-		f(r.err)
-	}); err != nil {
-		return Err[T](err)
-	}
-	return r
-}
-
-func (r Result[T]) Finally(f func()) Result[T] {
-	if err := common.DoSafe(f); err != nil {
-		return Err[T](err)
-	}
-	return r
-}
-
-// 如果Result是Err，则调用f并返回一个新的Result[T]
-func (r Result[T]) Else(f func(error) Result[T]) Result[T] {
-	if r.IsOk() {
-		return r
-	}
-	var newResult Result[T]
-	if err := common.DoSafe(func() {
-		newResult = f(r.err)
-	}); err != nil {
-		return Err[T](err)
-	}
-	return newResult
-}
-
-func (r Result[T]) MapErr(f func(error) error) Result[T] {
-	if r.IsOk() {
-		return r
-	}
-	var newResult Result[T]
-	if err := common.DoSafe(func() {
-		newResult = Err[T](f(r.err))
-	}); err != nil {
-		return Err[T](err)
-	}
-	return newResult
-}
-
 // =========================== 获取值或错误 ============================
 
 // 如果 Result 是 Ok，则返回其包含的值。否则 panic
@@ -206,6 +146,66 @@ func (r Result[T]) Err() opt.Option[error] {
 	return opt.Nul[error]()
 }
 
+// ========================== 链式方法 ============================
+
+func (r Result[T]) Try(f func(T)) Result[T] {
+	if r.IsErr() {
+		return r
+	}
+	if err := common.DoSafe(func() {
+		f(r.Get())
+	}); err != nil {
+		return Err[T](err)
+	}
+	return r
+}
+
+func (r Result[T]) Catch(f func(error)) Result[T] {
+	if r.IsOk() {
+		return r
+	}
+	if err := common.DoSafe(func() {
+		f(r.err)
+	}); err != nil {
+		return Err[T](err)
+	}
+	return r
+}
+
+func (r Result[T]) Finally(f func()) Result[T] {
+	if err := common.DoSafe(f); err != nil {
+		return Err[T](err)
+	}
+	return r
+}
+
+// 如果Result是Err，则调用f并返回一个新的Result[T]
+func (r Result[T]) Else(f func(error) Result[T]) Result[T] {
+	if r.IsOk() {
+		return r
+	}
+	var newResult Result[T]
+	if err := common.DoSafe(func() {
+		newResult = f(r.err)
+	}); err != nil {
+		return Err[T](err)
+	}
+	return newResult
+}
+
+func (r Result[T]) ElseMap(f func(error) T) Result[T] {
+	if r.IsOk() {
+		return r
+	}
+	var newResult Result[T]
+	if err := common.DoSafe(func() {
+		newResult = Ok(f(r.err))
+	}); err != nil {
+		return Err[T](err)
+	}
+	return newResult
+}
+
 // ========================== 常用类型的逻辑与方法 ============================
 
 func (r Result[T]) ThenT(f func(T) Result[T]) Result[T]                 { return Then(r, f) }
@@ -213,7 +213,6 @@ func (r Result[T]) ThenInt(f func(T) Result[int]) Result[int]           { return
 func (r Result[T]) ThenFloat(f func(T) Result[float64]) Result[float64] { return Then(r, f) }
 func (r Result[T]) ThenStr(f func(T) Result[string]) Result[string]     { return Then(r, f) }
 func (r Result[T]) ThenBool(f func(T) Result[bool]) Result[bool]        { return Then(r, f) }
-
 
 // ========================== 常用类型的Map方法 ============================
 

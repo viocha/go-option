@@ -70,26 +70,30 @@ func main() {
 * `Nul[T]() Option[T]`
 * `From[T](val T, err error) Option[T]`
 * `FromPtr[T](val *T) Option[T]`
+* `FromFunc[T](f func() T) Option[T]`
 
 #### 方法列表
 
-| 方法                         | 返回类型         | 描述                |
-|----------------------------|--------------|-------------------|
-| `String()`                 | `string`     | 返回 Option 的字符串表示  |
-| `IsVal()`                  | `bool`       | 是否包含值             |
-| `IsNul()`                  | `bool`       | 是否为空              |
-| `Has(value T)`             | `bool`       | 值是否等于指定值          |
-| `HasFunc(f func(T) bool)`  | `bool`       | 值是否满足函数条件         |
-| `Try(f func(T))`           | `Option[T]`  | 如果有值则执行函数         |
-| `Else(f func() Option[T])` | `Option[T]`  | 如果无值则执行函数构造新值     |
-| `Filter(f func(T) bool)`   | `Option[T]`  | 满足条件则保留，否则返回 None |
-| `Get()`                    | `T`          | 获取值或 panic        |
-| `GetOr(value T)`           | `T`          | 获取值或默认值           |
-| `GetOrFunc(f func() T)`    | `T`          | 获取值或调用函数返回默认值     |
-| `GetOrZero()`              | `T`          | 获取值或返回零值          |
-| `ToPtr()`                  | `*T`         | 将值转换为指针           |
-| `ToErr(err error)`         | `error`      | 无值返回错误            |
-| `ToValErr(err error)`      | `(T, error)` | 同时返回值和错误          |
+| 方法                         | 返回类型         | 描述                                   |
+|----------------------------|--------------|--------------------------------------|
+| `String()`                 | `string`     | 返回 Option 的字符串表示                     |
+| `IsVal()`                  | `bool`       | 是否包含值                                |
+| `IsNul()`                  | `bool`       | 是否为空                                 |
+| `Has(value T)`             | `bool`       | 值是否等于指定值                             |
+| `HasFunc(f func(T) bool)`  | `bool`       | 值是否满足函数条件                            |
+| `Try(f func(T))`           | `Option[T]`  | 如果有值则执行函数                            |
+| `Catch(f func())`          | `Option[T]`  | 如果无值则执行函数                            |
+| `Finally(f func())`        | `Option[T]`  | 执行函数并返回原 Option (若函数 panic 则返回 None) |
+| `Else(f func() Option[T])` | `Option[T]`  | 如果无值则执行函数构造新值                        |
+| `ElseVal(f func() T)`      | `Option[T]`  | 如果无值则执行函数构造 Some(value)              |
+| `Filter(f func(T) bool)`   | `Option[T]`  | 满足条件则保留，否则返回 None                    |
+| `Get()`                    | `T`          | 获取值或 panic                           |
+| `GetOr(value T)`           | `T`          | 获取值或默认值                              |
+| `GetOrFunc(f func() T)`    | `T`          | 获取值或调用函数返回默认值                        |
+| `GetOrZero()`              | `T`          | 获取值或返回零值                             |
+| `ToPtr()`                  | `*T`         | 将值转换为指针                              |
+| `ToErr(err error)`         | `error`      | 无值返回指定错误，有值返回 `nil`                  |
+| `ToValErr(err error)`      | `(T, error)` | 同时返回值和错误                             |
 
 #### 函数列表
 
@@ -115,31 +119,33 @@ func main() {
 * `Err[T](error error) Result[T]`
 * `From[T](val T, err error) Result[T]`
 * `FromOption[T](o option.Option[T], err error) Result[T]`
+* `FromFunc[T](f func() T) Result[T]`
 
 #### 方法列表
 
-| 方法                             | 返回类型                   | 描述               |
-|--------------------------------|------------------------|------------------|
-| `String()`                     | `string`               | 返回 Result 的字符串表示 |
-| `IsOk()`                       | `bool`                 | 是否成功             |
-| `IsErr()`                      | `bool`                 | 是否失败             |
-| `Has(value T)`                 | `bool`                 | 是否为 Ok 且值相等      |
-| `HasFunc(func(T) bool)`        | `bool`                 | 是否为 Ok 且值满足条件    |
-| `HasErr(error)`                | `bool`                 | 是否为 Err 且错误相等    |
-| `HasErrFunc(func(error) bool)` | `bool`                 | 是否为 Err 且错误满足函数  |
-| `Try(func(T))`                 | `Result[T]`            | 若为 Ok 执行函数       |
-| `Catch(func(error))`           | `Result[T]`            | 若为 Err 执行函数      |
-| `Else(func(error) Result[T])`  | `Result[T]`            | 若为 Err 执行函数构造新值  |
-| `MapErr(func(error) error)`    | `Result[T]`            | 映射错误             |
-| `Get()`                        | `T`                    | 获取值或 panic       |
-| `GetOr(v T)`                   | `T`                    | 获取值或返回默认         |
-| `GetOrZero()`                  | `T`                    | 获取值或返回零值         |
-| `GetOrFunc(f func(error) T)`   | `T`                    | 获取值或调用函数         |
-| `GetErr()`                     | `error`                | 获取错误或 panic      |
-| `ToValErr()`                   | `(T, error)`           | 同时获取值和错误         |
-| `ToPtr()`                      | `*T`                   | 将值转换为指针          |
-| `Val()`                        | `option.Option[T]`     | 将 Ok 转为 Some     |
-| `Err()`                        | `option.Option[error]` | 将 Err 转为 Some    |
+| 方法                             | 返回类型                   | 描述                                  |
+|--------------------------------|------------------------|-------------------------------------|
+| `String()`                     | `string`               | 返回 Result 的字符串表示                    |
+| `IsOk()`                       | `bool`                 | 是否成功                                |
+| `IsErr()`                      | `bool`                 | 是否失败                                |
+| `Has(value T)`                 | `bool`                 | 是否为 Ok 且值相等                         |
+| `HasFunc(func(T) bool)`        | `bool`                 | 是否为 Ok 且值满足条件                       |
+| `HasErr(error)`                | `bool`                 | 是否为 Err 且错误相等                       |
+| `HasErrFunc(func(error) bool)` | `bool`                 | 是否为 Err 且错误满足函数                     |
+| `Try(func(T))`                 | `Result[T]`            | 若为 Ok 执行函数                          |
+| `Catch(func(error))`           | `Result[T]`            | 若为 Err 执行函数                         |
+| `Finally(f func())`            | `Result[T]`            | 执行函数并返回原 Result (若函数 panic 则返回 Err) |
+| `Else(func(error) Result[T])`  | `Result[T]`            | 若为 Err 执行函数构造新值                     |
+| `ElseMap(func(error) T)`       | `Result[T]`            | 若为 Err 执行函数将错误映射为成功值                |
+| `Get()`                        | `T`                    | 获取值或 panic                          |
+| `GetOr(v T)`                   | `T`                    | 获取值或返回默认                            |
+| `GetOrZero()`                  | `T`                    | 获取值或返回零值                            |
+| `GetOrFunc(f func(error) T)`   | `T`                    | 获取值或调用函数                            |
+| `GetErr()`                     | `error`                | 获取错误或 panic                         |
+| `GetValErr()`                  | `(T, error)`           | 同时获取值和错误                            |
+| `ToPtr()`                      | `*T`                   | 将值转换为指针                             |
+| `Val()`                        | `option.Option[T]`     | 将 Ok 转为 Some                        |
+| `Err()`                        | `option.Option[error]` | 将 Err 转为 Some                       |
 
 #### 函数列表
 

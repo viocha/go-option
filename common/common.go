@@ -3,7 +3,7 @@ package common
 import "fmt"
 
 // 如果传入的值是 error 类型，则直接返回该 error，否则将其包装为 error 类型
-func toError(r any) error {
+func ToError(r any) error {
 	if err, ok := r.(error); ok {
 		return err
 	}
@@ -16,11 +16,10 @@ func DoSafe(f func()) error {
 	func() {
 		defer func() {
 			if r := recover(); r != nil {
-				err = toError(r)
+				err = ToError(r)
 			}
 		}()
 		f()
 	}()
 	return err
 }
-
