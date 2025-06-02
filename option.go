@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	
-	"github.com/viocha/go-option/util"
+	"github.com/viocha/go-option/internal/must"
 )
 
 type Option[T any] struct {
@@ -38,7 +38,7 @@ func FromPtr[T any](val *T) Option[T] {
 
 func FromFunc[T any](f func() T) Option[T] {
 	var result Option[T]
-	if nil == util.DoWithPanic(func() {
+	if nil == must.CatchMustPanic(func() {
 		result = Val(f())
 	}) {
 		return result
@@ -145,7 +145,7 @@ func (o Option[T]) Try(f func(T)) Option[T] {
 	if o.IsNul() {
 		return o
 	}
-	if nil == util.DoWithPanic(func() {
+	if nil == must.CatchMustPanic(func() {
 		f(o.Get())
 	}) {
 		return o
@@ -157,14 +157,14 @@ func (o Option[T]) Catch(f func()) Option[T] {
 	if o.IsVal() {
 		return o
 	}
-	if nil == util.DoWithPanic(f) {
+	if nil == must.CatchMustPanic(f) {
 		return o
 	}
 	return Nul[T]()
 }
 
 func (o Option[T]) Finally(f func()) Option[T] {
-	if nil == util.DoWithPanic(f) {
+	if nil == must.CatchMustPanic(f) {
 		return o
 	}
 	return Nul[T]()
@@ -175,7 +175,7 @@ func (o Option[T]) Filter(f func(T) bool) Option[T] {
 		return Nul[T]()
 	}
 	result := o
-	if nil == util.DoWithPanic(func() {
+	if nil == must.CatchMustPanic(func() {
 		if !f(o.Get()) {
 			result = Nul[T]()
 		}
@@ -191,7 +191,7 @@ func (o Option[T]) Else(f func() Option[T]) Option[T] {
 		return o
 	}
 	var result Option[T]
-	if nil == util.DoWithPanic(func() {
+	if nil == must.CatchMustPanic(func() {
 		result = f()
 	}) {
 		return result
@@ -204,7 +204,7 @@ func (o Option[T]) ElseVal(f func() T) Option[T] {
 		return o
 	}
 	var result Option[T]
-	if nil == util.DoWithPanic(func() {
+	if nil == must.CatchMustPanic(func() {
 		result = Val(f())
 	}) {
 		return result
@@ -236,7 +236,7 @@ func Then[T any, U any](o Option[T], f func(T) Option[U]) Option[U] {
 		return Nul[U]()
 	}
 	var result Option[U]
-	if nil == util.DoWithPanic(func() {
+	if nil == must.CatchMustPanic(func() {
 		result = f(o.Get())
 	}) {
 		return result
@@ -252,7 +252,7 @@ func Map[T any, U any](o Option[T], f func(T) U) Option[U] {
 		return Nul[U]()
 	}
 	var result Option[U]
-	if nil == util.DoWithPanic(func() {
+	if nil == must.CatchMustPanic(func() {
 		result = Val(f(o.Get()))
 	}) {
 		return result
@@ -266,7 +266,7 @@ func MapOr[T any, U any](o Option[T], f func(T) U, v U) U {
 	if o.IsNul() {
 		return v
 	}
-	if nil == util.DoWithPanic(func() {
+	if nil == must.CatchMustPanic(func() {
 		result = f(o.Get())
 	}) {
 		return result
@@ -280,7 +280,7 @@ func MapOrFunc[T any, U any](o Option[T], okFn func(T) U, defaultFn func() U) U 
 		return defaultFn()
 	}
 	var result U
-	if nil == util.DoWithPanic(func() {
+	if nil == must.CatchMustPanic(func() {
 		result = okFn(o.Get())
 	}) {
 		return result

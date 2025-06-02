@@ -6,7 +6,7 @@ import (
 	"reflect"
 	
 	opt "github.com/viocha/go-option"
-	"github.com/viocha/go-option/util"
+	"github.com/viocha/go-option/internal/must"
 )
 
 type Result[T any] struct {
@@ -45,7 +45,7 @@ func FromOption[T any](o opt.Option[T], err error) Result[T] {
 
 func FromFunc[T any](f func() T) Result[T] {
 	var result Result[T]
-	if err := util.DoWithPanic(func() {
+	if err := must.CatchMustPanic(func() {
 		result = Ok(f())
 	}); err != nil {
 		return Err[T](err)
@@ -159,7 +159,7 @@ func (r Result[T]) Try(f func(T)) Result[T] {
 	if r.IsErr() {
 		return r
 	}
-	if err := util.DoWithPanic(func() {
+	if err := must.CatchMustPanic(func() {
 		f(r.Get())
 	}); err != nil {
 		return Err[T](err)
@@ -171,7 +171,7 @@ func (r Result[T]) Catch(f func(error)) Result[T] {
 	if r.IsOk() {
 		return r
 	}
-	if err := util.DoWithPanic(func() {
+	if err := must.CatchMustPanic(func() {
 		f(r.err)
 	}); err != nil {
 		return Err[T](err)
@@ -180,7 +180,7 @@ func (r Result[T]) Catch(f func(error)) Result[T] {
 }
 
 func (r Result[T]) Finally(f func()) Result[T] {
-	if err := util.DoWithPanic(f); err != nil {
+	if err := must.CatchMustPanic(f); err != nil {
 		return Err[T](err)
 	}
 	return r
@@ -192,7 +192,7 @@ func (r Result[T]) Else(f func(error) Result[T]) Result[T] {
 		return r
 	}
 	var newResult Result[T]
-	if err := util.DoWithPanic(func() {
+	if err := must.CatchMustPanic(func() {
 		newResult = f(r.err)
 	}); err != nil {
 		return Err[T](err)
@@ -205,7 +205,7 @@ func (r Result[T]) ElseMap(f func(error) T) Result[T] {
 		return r
 	}
 	var newResult Result[T]
-	if err := util.DoWithPanic(func() {
+	if err := must.CatchMustPanic(func() {
 		newResult = Ok(f(r.err))
 	}); err != nil {
 		return Err[T](err)
@@ -237,7 +237,7 @@ func Then[T any, U any](r Result[T], f func(T) Result[U]) Result[U] {
 		return Err[U](r.err)
 	}
 	var newResult Result[U]
-	if err := util.DoWithPanic(func() {
+	if err := must.CatchMustPanic(func() {
 		newResult = f(r.Get())
 	}); err != nil {
 		return Err[U](err)
@@ -252,7 +252,7 @@ func Map[T any, U any](r Result[T], f func(T) U) Result[U] {
 		return Err[U](r.err)
 	}
 	var newResult Result[U]
-	if err := util.DoWithPanic(func() {
+	if err := must.CatchMustPanic(func() {
 		newResult = Ok(f(r.Get()))
 	}); err != nil {
 		return Err[U](err)
@@ -268,7 +268,7 @@ func MapOr[T any, U any](r Result[T], f func(T) U, v U) U {
 		return v
 	}
 	var val U
-	if err := util.DoWithPanic(func() {
+	if err := must.CatchMustPanic(func() {
 		val = f(r.Get())
 	}); err != nil {
 		return v
@@ -282,7 +282,7 @@ func MapOrFunc[T any, U any](r Result[T], okFn func(T) U, errFn func(error) U) U
 		return errFn(r.err)
 	}
 	var val U
-	if err := util.DoWithPanic(func() {
+	if err := must.CatchMustPanic(func() {
 		val = okFn(r.Get())
 	}); err != nil {
 		return errFn(err)
