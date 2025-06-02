@@ -107,13 +107,13 @@ func TestMapErr(t *testing.T) {
 
 func TestGetValErr(t *testing.T) {
 	ok := Ok("abc")
-	v, err := ok.GetValErr()
+	v, err := ok.Unwrap()
 	if err != nil || v != "abc" {
 		t.Errorf("Expected value 'abc' with nil error")
 	}
 	
 	r := Err[string](errors.New("fail"))
-	_, err = r.GetValErr()
+	_, err = r.Unwrap()
 	if err == nil {
 		t.Errorf("Expected error from GetWithErr")
 	}

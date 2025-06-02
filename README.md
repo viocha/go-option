@@ -93,7 +93,7 @@ func main() {
 | `GetOrZero()`              | `T`          | 获取值或返回零值                             |
 | `ToPtr()`                  | `*T`         | 将值转换为指针                              |
 | `ToErr(err error)`         | `error`      | 无值返回指定错误，有值返回 `nil`                  |
-| `ToValErr(err error)`      | `(T, error)` | 同时返回值和错误                             |
+| `Unwrap(err error)`        | `(T, error)` | 同时返回值和错误                             |
 
 #### 函数列表
 
@@ -142,7 +142,7 @@ func main() {
 | `GetOrZero()`                  | `T`                    | 获取值或返回零值                            |
 | `GetOrFunc(f func(error) T)`   | `T`                    | 获取值或调用函数                            |
 | `GetErr()`                     | `error`                | 获取错误或 panic                         |
-| `GetValErr()`                  | `(T, error)`           | 同时获取值和错误                            |
+| `Unwrap()`                     | `(T, error)`           | 同时获取值和错误                            |
 | `ToPtr()`                      | `*T`                   | 将值转换为指针                             |
 | `Val()`                        | `option.Option[T]`     | 将 Ok 转为 Some                        |
 | `Err()`                        | `option.Option[error]` | 将 Err 转为 Some                       |

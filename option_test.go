@@ -103,13 +103,13 @@ func TestOption_ToErr(t *testing.T) {
 func TestOption_GetValErr(t *testing.T) {
 	errMsg := errors.New("value is missing for GetValErr")
 	none := Nul[int]()
-	val, err := none.ToValErr(errMsg)
+	val, err := none.Unwrap(errMsg)
 	if err == nil || !errors.Is(err, errMsg) || val != 0 {
 		t.Error("Expected error and zero value from GetValErr on None")
 	}
 
 	some := Val(5)
-	valSome, errSome := some.ToValErr(errMsg)
+	valSome, errSome := some.Unwrap(errMsg)
 	if errSome != nil || valSome != 5 {
 		t.Errorf("Expected value 5 and nil error from GetValErr on Some, got val %v, err %v", valSome, errSome)
 	}

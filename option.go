@@ -124,7 +124,7 @@ func (o Option[T]) ToErr(e error) error {
 	return e
 }
 
-func (o Option[T]) ToValErr(err error) (T, error) {
+func (o Option[T]) Unwrap(err error) (T, error) {
 	if o.IsVal() {
 		return o.Get(), nil
 	}

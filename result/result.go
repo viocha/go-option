@@ -116,7 +116,7 @@ func (r Result[T]) GetErr() error {
 	return r.err
 }
 
-func (r Result[T]) GetValErr() (T, error) {
+func (r Result[T]) Unwrap() (T, error) {
 	if r.IsOk() {
 		return r.Get(), nil
 	}
