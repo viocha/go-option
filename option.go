@@ -48,6 +48,22 @@ func FromFunc[T any](f func() T) Option[T] {
 
 // ========================== 方法 =============================
 
+func (o Option[T]) String() string {
+	if o.IsVal() {
+		return fmt.Sprintf("Some[%T](%v)", o.Get(), o.Get())
+	}
+	typ := reflect.TypeFor[T]()
+	return fmt.Sprintf("None[%v]()", typ)
+}
+
+// 克隆
+func (o Option[T]) Clone() Option[T] {
+	if o.IsNul() {
+		return Nul[T]()
+	}
+	return Val(*o.val)
+}
+
 // 存在值
 func (o Option[T]) IsVal() bool {
 	return o.exists
@@ -56,14 +72,6 @@ func (o Option[T]) IsVal() bool {
 // 不存在值
 func (o Option[T]) IsNul() bool {
 	return !o.exists
-}
-
-func (o Option[T]) String() string {
-	if o.IsVal() {
-		return fmt.Sprintf("Some[%T](%v)", o.Get(), o.Get())
-	}
-	typ := reflect.TypeFor[T]()
-	return fmt.Sprintf("None[%v]()", typ)
 }
 
 // 判断是否存在指定值，使用 reflect.DeepEqual 进行比较

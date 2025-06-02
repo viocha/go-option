@@ -63,6 +63,13 @@ func (r Result[T]) String() string {
 	return fmt.Sprintf("Err[%v](%v)", typ, r.err)
 }
 
+func (r Result[T]) Clone() Result[T] {
+	if r.IsOk() {
+		return Ok(r.Get())
+	}
+	return Err[T](r.err)
+}
+
 func (r Result[T]) IsOk() bool {
 	return r.err == nil
 }
@@ -284,4 +291,3 @@ func MapOrFunc[T any, U any](r Result[T], okFn func(T) U, errFn func(error) U) U
 }
 
 // =========================== 工具函数 ============================
-
